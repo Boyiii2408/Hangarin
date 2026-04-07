@@ -1,17 +1,14 @@
-var CACHE_NAME = 'hangarin-cache-v1';
-var urlsToCache = [
-    '/',
-    '/offline/',
-];
+var CACHE_NAME = 'hangarin-cache-v3';
+var urlsToCache = ['/offline/'];
 
 self.addEventListener('install', function(e) {
     e.waitUntil(
         caches.open(CACHE_NAME).then(function(cache) {
-            console.log('Caching offline page');
             return cache.addAll(urlsToCache);
+        }).then(function() {
+            return self.skipWaiting();
         })
     );
-    self.skipWaiting();
 });
 
 self.addEventListener('activate', function(e) {
@@ -24,12 +21,14 @@ self.addEventListener('activate', function(e) {
                     return caches.delete(name);
                 })
             );
+        }).then(function() {
+            return self.clients.claim();
         })
     );
-    self.clients.claim();
 });
 
 self.addEventListener('fetch', function(e) {
+    if (e.request.method !== 'GET') return;
     e.respondWith(
         fetch(e.request).catch(function() {
             return caches.match('/offline/');
